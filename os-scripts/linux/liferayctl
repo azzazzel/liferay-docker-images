@@ -133,6 +133,8 @@ startLiferay()
 		do
 	   		if [[ "${LOGLINE}" = *"Server startup in"* ]] ; then 
 	   			echo "Liferay started in `echo ${LOGLINE} | grep -oP '\d*'` ms!" 
+	   			# pgrep -nP $$ docker
+	   			pkill -nP $$ docker
 	   			exit 0
    			fi
 		done
