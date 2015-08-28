@@ -1,6 +1,6 @@
 # Liferay Docker Images
 
-This tool can create a Docker image from any released version of Liferay.
+This tool can create a Docker image from any released version of [Liferay].
 
 If you only want to try it out without getting to know the details, feel free to follow the instructions in [TL;DR] section at your own risk ;) 
 
@@ -100,4 +100,5 @@ This will add things like `CMD`, `ENV`, `EXPOSE`, ... that [Packer] can not do. 
 [TL;DR]: #tldr
 [Docker]: http://www.docker.com/
 [Packer]: http://www.packer.io
+[Liferay]: http://www.liferay.com/
 [Alpine linux image]: https://hub.docker.com/_/alpine/
