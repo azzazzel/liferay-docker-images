@@ -64,10 +64,10 @@ startLiferay()
 
 	if [ $? -ne 0 ]; then
 
-		docker pull $DOCKER_REPO:$LIFERAY_VERSION >> $LOG_FILE 2>&1 
+		docker pull $DOCKER_REPO:$LIFERAY_VERSION 
 
 		if [ $? -ne 0 ]; then
-			echo "It seams there is no image for Liferay $LIFERAY_VERSION' available!"
+			echo "It seams there is no image for Liferay '$LIFERAY_VERSION' available!"
 			echo "Currently only following Liferay versions have container images:"
 			listVersions
 			exit 1
