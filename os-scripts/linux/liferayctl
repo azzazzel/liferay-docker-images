@@ -147,8 +147,8 @@ startLiferay()
 stopLiferay()
 {
 	echo "--> stopLiferay" >> $LOG_FILE
-  	docker stop $CONTAINER_NAME >> $LOG_FILE
-  	docker rm $CONTAINER_NAME >> $LOG_FILE
+  	docker stop $CONTAINER_NAME >> $LOG_FILE 2>&1
+  	docker rm $CONTAINER_NAME >> $LOG_FILE 2>&1
 }
 
 while getopts “hlv:c:p:a:nd:fx” OPTION
