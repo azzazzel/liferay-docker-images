@@ -1,0 +1,216 @@
+#!/bin/bash
+
+
+DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+
+DOCKER_REPO="azzazzel/liferay-standalone"
+LIFERAY_VERSION="stable"
+CONTAINER_NAME="liferay_${LIFERAY_VERSION}_run"
+DATA_CONTAINER_NAME="liferay_${LIFERAY_VERSION}_data"
+HTTP_PORT=8080
+AJP_PORT=8009
+WAIT=true
+FORCE_REMOVE=false
+LOG_FILE="/dev/null"
+
+
+usage()
+{
+cat << EOF
+usage: $0 options command
+
+This script runs Liferay from Docker container.
+
+COMMANDS:
+   start    Starts Liferay
+   stop     Stop Liferay
+   restart  Restart Liferay
+
+OPTIONS:
+   -v version   Specific Liferay version to run. Default is "stable" which is latest stable release. Use "$0 -l to see available versions"
+   -l           List Liferay versions available as docker containers
+   -c name      The name of the container to be started. Default is 'liferay_[VERSION]_run' 
+                Container will be created on start and destroyed on stop. Data is persisted in a separate data only cotainer (see -d flag).
+   -d name      The name of the data container. Default is 'liferay_[VERSION]_data' or '[CONTAINER_NAME]_data' if container name is provided.
+                Container will be created if it does not exists and never removed. Remove it manually if you are OK with loosing the data!
+   -p port      The HTTP port. Default is 8080  
+   -a port      The AJP port. Default is 8009  
+   -n           Exit right after the container is started (do not wait for Liferay itself to start)  
+   -f           Force removing exiting stopped container with the same name 
+   -x           Debug mode. Logging command outputs to '$DIR/.liferay.log'
+   -h 	        Displays this help  
+EOF
+}
+
+
+listVersions()
+{
+	echo "--> listVersions()" >> $LOG_FILE
+	echo `curl -s https://registry.hub.docker.com/v1/repositories/${DOCKER_REPO}/tags \
+		| tr ',' '\n' \
+		| tr -d ' ' \
+		| grep '"name":' \
+		| grep -o ':".*"' \
+		| tr -d ':"' \
+	`
+}
+
+
+startLiferay()
+{
+	echo "--> startLiferay()" >> $LOG_FILE
+
+	docker inspect $DOCKER_REPO:$LIFERAY_VERSION >> $LOG_FILE 2>&1 
+
+	if [ $? -ne 0 ]; then
+
+		docker pull $DOCKER_REPO:$LIFERAY_VERSION >> $LOG_FILE 2>&1 
+
+		if [ $? -ne 0 ]; then
+			echo "It seams there is no image for Liferay $LIFERAY_VERSION' available!"
+			echo "Currently only following Liferay versions have container images:"
+			listVersions
+			exit 1
+		fi	
+		
+	fi
+
+	docker inspect $DATA_CONTAINER_NAME >> $LOG_FILE 2>&1
+
+	if [ $? -eq 0 ]; then
+		echo "Data volume container: '$DATA_CONTAINER_NAME'"
+	else
+		echo "Data volume container '$DATA_CONTAINER_NAME' does not exists!"
+		docker create \
+			-v /var/lib/liferay \
+			--name $DATA_CONTAINER_NAME \
+			$DOCKER_REPO:$LIFERAY_VERSION \
+			/bin/true \
+			>> $LOG_FILE
+		if [ $? -eq 0 ]; then
+			echo "Created data volume container '$DATA_CONTAINER_NAME'!"
+		else
+	  		echo "ERROR: Failed to create data volume container $DATA_CONTAINER_NAME!"
+  			exit 1
+		fi
+	fi
+		
+	RUNNING=$(docker inspect --format="{{ .State.Running }}" $CONTAINER_NAME 2>> $LOG_FILE)
+	if [ $? -eq 0 ]; then
+		if [ "$RUNNING" = "true" ]; then
+	  		echo "Docker container '$CONTAINER_NAME' is already runnig!"
+	  		exit 0
+	  	else 
+	  		if [ $FORCE_REMOVE = "true" ]; then
+				docker rm $CONTAINER_NAME >> $LOG_FILE
+			else
+				echo "Docker container '$CONTAINER_NAME' alredy exists but it is stopped!"
+				echo "Please start it manually using 'docker start $CONTAINER_NAME' or provide '-f' to force it's removal!"
+				exit 1
+			fi
+	  	fi
+	fi
+
+	docker run \
+		-d \
+		-v /etc/localtime:/etc/localtime:ro \
+		-v /etc/timezone:/etc/timezone:ro \
+		--volumes-from $DATA_CONTAINER_NAME \
+		-p $HTTP_PORT:8080 \
+		-p $AJP_PORT:8009 \
+		--name $CONTAINER_NAME \
+		$DOCKER_REPO:$LIFERAY_VERSION \
+		>> $LOG_FILE
+
+	if [ $? -ne 0 ]; then
+  		echo "ERROR: Failed to start container $CONTAINER_NAME!"
+		exit 1
+	fi
+
+	if [ "$WAIT" = "true" ]; then
+	  	echo "Staring Liferay ..."
+	  	docker logs -f --since=`date +%s` $CONTAINER_NAME 2>&1 | while read LOGLINE
+		do
+	   		if [[ "${LOGLINE}" = *"Server startup in"* ]] ; then 
+	   			echo "Liferay started in `echo ${LOGLINE} | grep -oP '\d*'` ms!" 
+	   			exit 0
+   			fi
+		done
+	else 
+	  	echo "Container started. Liferay will start shortly!"
+	fi
+
+}
+
+stopLiferay()
+{
+	echo "--> stopLiferay" >> $LOG_FILE
+  	docker stop $CONTAINER_NAME >> $LOG_FILE
+  	docker rm $CONTAINER_NAME >> $LOG_FILE
+}
+
+while getopts “hlv:c:p:a:nd:fx” OPTION
+do
+     case $OPTION in
+         "h")
+             usage
+             exit 1
+             ;;
+         "l")
+             listVersions
+             exit 0
+             ;;
+         "v")
+        	 LIFERAY_VERSION=$OPTARG
+			 CONTAINER_NAME="liferay_${LIFERAY_VERSION}_run"
+			 DATA_CONTAINER_NAME="liferay_${LIFERAY_VERSION}_data"
+             ;;
+         "c")
+             CONTAINER_NAME=$OPTARG
+             DATA_CONTAINER_NAME="${CONTAINER_NAME}_data"
+             ;;
+         "d")
+             DATA_CONTAINER_NAME=$OPTARG
+             ;;
+         "p")
+             HTTP_PORT=$OPTARG
+             ;;
+         "a")
+             AJP_PORT=$OPTARG
+             ;;
+         "n")
+             WAIT=false
+             ;;
+         "f")
+             FORCE_REMOVE=true
+             ;;
+         "x")
+             LOG_FILE=$DIR/.liferay.log
+             ;;
+         "?")
+             usage
+             exit
+             ;;
+     esac
+done
+
+
+shift $(($OPTIND - 1))
+
+case $1 in
+	"start")
+		startLiferay
+	    ;;
+	"stop")
+		stopLiferay
+	    ;;
+	"restart")
+		stopLiferay
+		startLiferay
+	    ;;
+ 	*)
+    	echo "Unknown command: $1"
+    	usage
+     	exit
+     	;;
+esac

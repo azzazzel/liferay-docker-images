@@ -1,0 +1,4 @@
+**/java-releases/*
+**/liferay-releases/*
+!**/java-releases/*.md5
+!**/liferay-releases/*.md5

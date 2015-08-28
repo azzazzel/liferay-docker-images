@@ -1,0 +1,78 @@
+/*
+ * This is Packer (https://www.packer.io) template file used to build Docker image for given Liferay version: 
+ * The stack is:
+ *  - Alpine OS 
+ *  - Oracle Java - version as specified in the specific env file
+ *  - Liferay portal (Tomcat bundle) - version as specified in the specific env file
+ *
+ * DO NOT run Packer with this config !! 
+ * Use: ./build.sh <LIFERAY_VERSION_FOR_WHICH_ENV_FILE_EXISTS> instead!
+ *
+ * This template can NOT be used directly with Packer for at least 2 reasons:
+ *  - is has comments which makes it an invalid JSON. The build script uses `pack.sh` scriot which uses `jsmin` tool 
+ *    (both in utils folder) to remove the comments before passing the file to Packer.
+ *  - it expects some environmet variables to be set and provisioning artifacts to be in place. 
+ */
+
+{
+	"variables": {
+		"java_archive": 		"{{env `JAVA_ARCHIVE_PATH`}}",
+		"liferay_version": 		"{{env `LIFERAY_VERSION`}}",
+		"liferay_archive": 		"{{env `LIFERAY_ARCHIVE_PATH`}}",
+		"container_repository": "{{env `CONTAINER_REPO`}}"
+	},
+
+	// Build new image on top of latest Alpine linux image
+
+	"builders": [
+		{
+			"name": "liferay-standalone",
+			"type": "docker",
+			"image": "alpine",
+			"commit": "true",
+			"run_command": [
+				"-d", 
+				"-i", 
+				"-t", 
+				"{{.Image}}", 
+				"/bin/ash"
+			]
+		}
+	],
+
+	// Provision the newly created image 
+
+	"provisioners": [
+		// Copy Java archive 
+		{
+			"type": "file",
+			"source": "{{user `java_archive`}}",
+			"destination": "/tmp/java.zip"
+		},
+		// Copy Liferay archive 
+		{
+			"type": "file",
+			"source": "{{user `liferay_archive`}}",
+			"destination": "/tmp/liferay-portal.zip"
+		},
+		// Run provisioning script
+		// TODO: allow each environment (version) to specify own provisioning script  
+		{
+			"type": "shell",
+			"script": ".provision_guest.sh"
+		}
+	],
+
+	// Tag the newly created image 
+
+	"post-processors": [
+		[
+			{
+				"type": "docker-tag",
+				"repository": "{{user `container_repository`}}",
+				"tag": "{{user `liferay_version`}}",
+				"force": true
+			}
+		]
+	]
+}
