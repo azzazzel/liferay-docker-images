@@ -4,46 +4,52 @@ An attempt to provide some scripts that make it easier to work with [Liferay] [D
 
 ## What is there and why we need scripts
   
-There is currently only one script: `liferayctl` which only works on Linux :(
+There is currently only one script: `liferayctl` which can be used on Linux and OS X! 
 
 **Pull request about other scripts and support for other operating systems are more than welcome!!** 
 
-If you are very comfortable working with Docker you may argue those are needles. 
-However for those that don't care much about Docker but rather want to have a quick, simple and convenient to run particular [Liferay] version, it should come handy.
+For people comfortable with working with Docker directly, such scripts may not bring a lot of value. 
+However for those that don't care much about Docker itself but rather want to have a quick, simple and convenient way
+to run particular [Liferay] version - it should come very handy.
 
 ## Example worth a thousand words ;)
 
-Lets try it out:
+Lets try it out. Make sure you have [Docker] installed. If you are running OS X, make sure you are in `boot2docker` terminal window.
+Then type:
 
 ```bash
-wget -nc http://tiny.cc/liferayctl && chmod +x liferayctl
-liferayctl start
+curl -LO http://tiny.cc/liferayctl && chmod +x liferayctl
+./liferayctl start
 ```
 
 This will:
 
  - download the `liferayctl` script and make it executable
- - run the the latest stable version of Liferay (6.2ga4 at the time of writing) in a Docker container. 
+ - download the Docker image of the latest stable Liferay version (6.2ga4 at the time of writing) 
+ - create a container from that image and run it 
+ - make container's HTTP and AJP ports to you host 
 
-Since this the first time you run the command it needs to download the image so it will take some time
+Since this is the first time you run the command it needs to download the container image so it will take some time. 
+Once it's ready go to `localhost:8080` 
 
-Cool, isn't it? Lets have another one: 
+Like that? Cool, Lets have another one: 
 
 ```bash
 liferayctl -v latest -p 8180 -a 8108 start
 ```
 
-which will run the the latest released version of Liferay (7.0m7 at the time of writing) in another Docker container (it will take while to download that image too).
-Here apart form `-v latest` which tells we want the latest version we also have `-p 8180 -a 8108` to specify different HTTP and AJP ports to avoid conflicts with the container we started earlier.
+this will run the the latest released version of Liferay (7.0m7 at the time of writing) in another Docker container (it will also take a while to download the new image).
+Here apart form `-v latest` which specifies the latest released version, we also have `-p 8180 -a 8108` to specify different HTTP and AJP ports to avoid conflicts with the container we started earlier. Time to go to `localhost:8180` and enjoy Liferay 7 ;) 
 
-Once we are done playing we can stop them:
+Once we are done playing with them, we can stop them:
 
 ```bash
 liferayctl stop
 liferayctl -v latest stop
 ```
 
-Containers are gone but you can start new ones at any time. And guess what - your data is persisted in a data volume container so you can change the execution parameters without loosing any data.
+This will stop and remove both containers. New ones can be created and started at any time though with `liferayctl <OPTIONS> start`. 
+The data is persisted in a data volume container(s), so destroying and recreating containers does not cause any data loss.
 
 
 [Docker]: http://www.docker.com/
