@@ -111,10 +111,17 @@ startLiferay()
 	  	fi
 	fi
 
+	MOUNT_TIMEFILES=""
+	if [ -f "/etc/localtime" ]; then
+		MOUNT_TIMEFILES="$MOUNT_TIMEFILES -v /etc/localtime:/etc/localtime:ro "		
+	fi
+	if [ -f "/etc/timezone" ]; then
+		MOUNT_TIMEFILES="$MOUNT_TIMEFILES -v /etc/timezone:/etc/timezone:ro "		
+	fi
+
 	docker run \
 		-d \
-		-v /etc/localtime:/etc/localtime:ro \
-		-v /etc/timezone:/etc/timezone:ro \
+		$MOUNT_TIMEFILES \
 		--volumes-from $DATA_CONTAINER_NAME \
 		-p $HTTP_PORT:8080 \
 		-p $AJP_PORT:8009 \
