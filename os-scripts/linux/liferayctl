@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
 DOCKER_REPO="azzazzel/liferay-standalone"
@@ -13,6 +12,13 @@ WAIT=true
 FORCE_REMOVE=false
 LOG_FILE="/dev/null"
 
+case "$OSTYPE" in
+  solaris*) OS="SOLARIS" ;;
+  darwin*)  OS="OSX" ;; 
+  linux*)   OS="LINUX" ;;
+  bsd*)     OS="BSD" ;;
+  *)        OS="unknown: $OSTYPE" ;;
+esac
 
 usage()
 {
@@ -112,11 +118,13 @@ startLiferay()
 	fi
 
 	MOUNT_TIMEFILES=""
-	if [ -f "/etc/localtime" ]; then
-		MOUNT_TIMEFILES="$MOUNT_TIMEFILES -v /etc/localtime:/etc/localtime:ro "		
-	fi
-	if [ -f "/etc/timezone" ]; then
-		MOUNT_TIMEFILES="$MOUNT_TIMEFILES -v /etc/timezone:/etc/timezone:ro "		
+	if [ $OS -eq "LINUX" ]; then
+		if [ -f "/etc/localtime" ]; then
+			MOUNT_TIMEFILES="$MOUNT_TIMEFILES -v /etc/localtime:/etc/localtime:ro "		
+		fi
+		if [ -f "/etc/timezone" ]; then
+			MOUNT_TIMEFILES="$MOUNT_TIMEFILES -v /etc/timezone:/etc/timezone:ro "		
+		fi
 	fi
 
 	docker run \
