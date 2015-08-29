@@ -118,7 +118,7 @@ startLiferay()
 	fi
 
 	MOUNT_TIMEFILES=""
-	if [ $OS -eq "LINUX" ]; then
+	if [ "$OS" = "LINUX" ]; then
 		if [ -f "/etc/localtime" ]; then
 			MOUNT_TIMEFILES="$MOUNT_TIMEFILES -v /etc/localtime:/etc/localtime:ro "		
 		fi
@@ -136,6 +136,14 @@ startLiferay()
 		--name $CONTAINER_NAME \
 		$DOCKER_REPO:$LIFERAY_VERSION \
 		>> $LOG_FILE
+
+
+	if [ "$OS" = "OSX" ]; then
+		boot2docker ssh -vnNTL *:$HTTP_PORT:localhost:$HTTP_PORT >> LOG_FILE 2>&1 &
+		pgrep -nP $$ boot2docker >> /tmp/$CONTAINER_NAME
+		boot2docker ssh -vnNTL *:$AJP_PORT:localhost:$AJP_PORT >> LOG_FILE 2>&1 &
+		pgrep -nP $$ boot2docker >> /tmp/$CONTAINER_NAME
+	fi
 
 	if [ $? -ne 0 ]; then
   		echo "ERROR: Failed to start container $CONTAINER_NAME!"
@@ -162,6 +170,16 @@ startLiferay()
 stopLiferay()
 {
 	echo "--> stopLiferay" >> $LOG_FILE
+
+	if [ "$OS" = "OSX" ] && [ -f "/tmp/$CONTAINER_NAME" ]; then
+		while read pid
+		do
+		    pkill -9 -P "$pid"
+		    kill $pid
+		done < /tmp/$CONTAINER_NAME
+		rm /tmp/$CONTAINER_NAME
+	fi
+
   	docker stop $CONTAINER_NAME >> $LOG_FILE 2>&1
   	docker rm $CONTAINER_NAME >> $LOG_FILE 2>&1
 }
