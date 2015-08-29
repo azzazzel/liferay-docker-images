@@ -147,7 +147,7 @@ startLiferay()
 	  	docker logs -f --since=`date +%s` $CONTAINER_NAME 2>&1 | while read LOGLINE
 		do
 	   		if [[ "${LOGLINE}" = *"Server startup in"* ]] ; then 
-	   			echo "Liferay started in `echo ${LOGLINE} | grep -oP '\d*'` ms!" 
+				echo "Liferay started in `echo ${LOGLINE} | tr -d '[:alpha:]'` ms!"
 	   			# pgrep -nP $$ docker
 	   			pkill -nP $$ docker
 	   			exit 0
