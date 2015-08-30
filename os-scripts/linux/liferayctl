@@ -220,7 +220,7 @@ do
              FORCE_REMOVE=true
              ;;
          "x")
-             LOG_FILE=$DIR/.liferay.log
+             LOG_FILE=$DIR/.liferayctl.log
              ;;
          "?")
              usage

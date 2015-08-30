@@ -2,11 +2,11 @@
 
 An attempt to provide some scripts that make it easier to work with [Liferay] [Docker] images.
 
-## What is there and why we need scripts
-  
-There is currently only one script: `liferayctl` which can be used on Linux and OS X! 
+ * [liferayctl](liferayctl.md) (for Linux and OS X)
 
-**Pull request about other scripts and support for other operating systems are more than welcome!!** 
+There is currently only one script **pull request about other scripts and support for other operating systems are more than welcome!!**
+
+## Why scripts/commands
 
 For people comfortable with working with Docker directly, such scripts may not bring a lot of value. 
 However for those that don't care much about Docker itself but rather want to have a quick, simple and convenient way
