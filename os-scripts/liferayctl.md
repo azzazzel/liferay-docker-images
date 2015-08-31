@@ -60,7 +60,7 @@ This is what happens when the script is called with `start` command:
 
  * `liferayctl` will start the newly created runtime container. 
 
- * if running on OS X `liferayctl` will call `boot2docker` to create ssh tunnels between `boot2docker` and the host to forward the ports specified by `-p` ans `-a`
+ * if running on OS X `liferayctl` will call `boot2docker` to create ssh tunnels between `boot2docker` and the host to forward the ports specified by `-p` ans `-a`. It currently uses the solution from [this issue](https://github.com/docker/docker/issues/4007). Please let me know if there is a better way to do it!
 
  * `liferayctl` will scan container logs and wait for a message indicating that Liferay has started. This behavior can be disabled with `-n` switch
 
