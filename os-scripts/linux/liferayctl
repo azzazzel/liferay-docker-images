@@ -151,7 +151,7 @@ startLiferay()
 	fi
 
 	if [ "$WAIT" = "true" ]; then
-	  	echo "Staring Liferay ..."
+	  	echo "Starting Liferay ..."
 	  	docker logs -f --since=`date +%s` $CONTAINER_NAME 2>&1 | while read LOGLINE
 		do
 	   		if [[ "${LOGLINE}" = *"Server startup in"* ]] ; then 
