@@ -3,7 +3,7 @@
 DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
 # --------------------
-#  Make sure we are colled correctly and the environment is set up 
+#  Make sure we are called correctly and the environment is set up 
 # --------------------
 
 if [ -z "$1" ] ; then 
@@ -101,7 +101,7 @@ echo "Runnig packer to create the base docker image using:"
 echo " - Java --> ${JAVA_ARCHIVE_PATH}" 
 echo " - Liferay --> ${LIFERAY_ARCHIVE_PATH}" 
 
-utils/pack.sh build \
+../utils/pack.sh build \
 	-var "java_archive=${JAVA_ARCHIVE_PATH}" \
 	-var "liferay_archive=${LIFERAY_ARCHIVE_PATH}" \
 	-var "liferay_version=${LIFERAY_VERSION}" \
