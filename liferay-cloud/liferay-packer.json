@@ -1,0 +1,69 @@
+/*
+ * This is Packer (https://www.packer.io) template file used to build Docker image for given Liferay version: 
+ * The image is based on `liferay-standalone` and extends it by :
+ *  - providing `conf.d` to auto update configuration from remote backend (`etcd`, `consul`, `zookeeper`, ...)
+ *  - providing `portal-bundle.properties` template 
+ *  - providing `cluster-config.xml` template 
+ * 
+ * DO NOT run Packer with this config !! 
+ * Use: ./build.sh VERSION instead!
+ *
+ * This template can NOT be used directly with Packer for at least 2 reasons:
+ *  - is has comments which makes it an invalid JSON. The build script uses `pack.sh` script which uses `jsmin` tool 
+ *    (both in utils folder) to remove the comments before passing the file to Packer.
+ *  - it expects some environmet variables to be set and provisioning artifacts to be in place. 
+ */
+
+{
+	"variables": {
+		"container_repository": "{{env `CONTAINER_REPO`}}",
+		"liferay_version": "{{env `LIFERAY_STANDALONE_VERSION`}}"
+	},
+
+	// Build new image on top of liferay-standalone
+
+	"builders": [
+		{
+			"name": "liferay-cloud",
+			"type": "docker",
+			"image": "azzazzel/liferay-standalone:{{user `liferay_version`}}",
+			"commit": "true",
+			"run_command": [
+				"-d", 
+				"-i", 
+				"-t", 
+				"{{.Image}}", 
+				"/bin/ash"
+			]
+		}
+	],
+
+	// Provision the newly created image 
+
+	"provisioners": [
+		// Copy provisionig files
+		{
+			"type": "file",
+			"source": "provision/",
+			"destination": "/tmp/provision"
+		},
+		// Run provisioning script
+		{
+			"type": "shell",
+			"script": ".provision_guest.sh"
+		}
+	],
+
+	// Tag the newly created image 
+
+	"post-processors": [
+		[
+			{
+				"type": "docker-tag",
+				"repository": "{{user `container_repository`}}",
+				"tag": "{{user `liferay_version`}}",
+				"force": true
+			}
+		]
+	]
+}

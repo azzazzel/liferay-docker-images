@@ -1,0 +1,57 @@
+#!/bin/ash
+
+# -------------------------
+# fail immediately if anything goes wrong
+# -------------------------
+set -eo pipefail
+
+
+# -------------------------
+# configure the cluster name 
+# -------------------------
+export LIFERAY_CLUSTER_NAME=${LIFERAY_CLUSTER_NAME:-"default"}
+
+for i in /etc/confd/conf.d/*; do
+	sed -i "s/___cluster_name___/$LIFERAY_CLUSTER_NAME/g" $i
+done
+
+for i in /etc/confd/templates/*; do
+	sed -i "s/___cluster_name___/$LIFERAY_CLUSTER_NAME/g" $i
+done
+
+
+# -------------------------
+# configure backend. Default is etcd on the host machine
+# -------------------------
+HOST_IP=`ip -o route | grep 'default via' | cut -d ' ' -f3`
+export CONFD_BACKEND=${CONFD_BACKEND:-"etcd"}
+export BACKEND_PORT=${BACKEND_PORT:-2379}
+export BACKEND_IP=${BACKEND_IP:-$HOST_IP}
+export CONFD_BACKEND_LOCATION=$BACKEND_IP:$BACKEND_PORT
+
+echo "[liferay] booting container. Configuration expected in $CONFD_BACKEND ($CONFD_BACKEND_LOCATION)."
+
+
+# -------------------------
+# Try to make initial configuration every 5 seconds until successful
+# -------------------------
+until confd -backend $CONFD_BACKEND -node $CONFD_BACKEND_LOCATION -onetime; do
+    echo "[liferay] waiting for conf.d to create initial liferay cluster configuration."
+    sleep 5
+done
+
+# -------------------------
+# Put a continual polling `confd` process into the background to watch for changes every 10 seconds
+#
+# Disabled for now! 
+# Automated Liferay restart on every configuration change does not seem to be a good idea
+# -------------------------
+# confd -backend $CONFD_BACKEND -node $CONFD_BACKEND_LOCATION -interval 10 &
+# echo "[liferay] confd is now monitoring $CONFD_BACKEND for changes..."
+
+
+# -------------------------
+# Start Liferay
+# -------------------------
+TOMCAT_DIR=`ls -1 /opt/liferay | grep tomcat-`
+/opt/liferay/${TOMCAT_DIR}/bin/catalina.sh run

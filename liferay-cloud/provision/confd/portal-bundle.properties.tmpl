@@ -1,0 +1,75 @@
+#
+# Specify the Liferay home directory.
+#
+liferay.home=/var/lib/liferay
+
+
+#
+# Disable the Setup Wizard that is displayed the first the portal is started.
+#
+setup.wizard.enabled=false
+
+
+#
+# Do not automatically launch a browser when the portal has fully initialized.
+#
+browser.launcher.url=
+
+
+#
+# Set the properties used to create the JDBC data source. 
+#
+jdbc.default.driverClassName={{or (getv "/liferay/___cluster_name___/db/driver") "com.mysql.jdbc.Driver"}}
+jdbc.default.url={{or (getv "/liferay/___cluster_name___/db/url") "jdbc:mysql://localhost/lportal?useUnicode=true&characterEncoding=UTF-8&useFastDateParsing=false"}}
+jdbc.default.username={{or (getv "/liferay/___cluster_name___/db/username") ""}}
+jdbc.default.password={{or (getv "/liferay/___cluster_name___/db/password") ""}}
+
+
+#####
+# TODO : allow additional databases from conf.d
+#####
+
+
+#
+# Configure document library to use advanced file system store. 
+#
+dl.store.impl=com.liferay.portlet.documentlibrary.store.AdvancedFileSystemStore
+dl.store.file.system.root.dir={{or (getv "/liferay/___cluster_name___/dl/dir") "/var/lib/liferay/data/document_library"}}
+dl.store.advanced.file.system.root.dir={{or (getv "/liferay/___cluster_name___/dl/dir") "/var/lib/liferay/data/document_library"}}
+
+
+#
+# Enable Liferay's ClusterLink feature
+#
+cluster.link.enabled=true 
+
+
+#
+# Provide a network address to autodetect the default outgoing IP address. 
+# It can be any address that can be accessed by all nodes. 
+# The safest approach is to use the database one as it has to be accessible by all nodes anyway
+#
+cluster.link.autodetect.address={{or (getv "/liferay/___cluster_name___/clusterlink/autodetect") "google.com:80"}}
+
+
+#
+# Configure EHCache to use JGroups 
+#
+{{if exists "/liferay/___cluster_name___/clusterlink/config"}}
+	cluster.link.channel.properties.control=/opt/liferay/cluster-config/cluster-config.xml
+	cluster.link.channel.properties.transport.0=/opt/liferay/cluster-config/cluster-config.xml
+	net.sf.ehcache.configurationResourceName.peerProviderProperties=channelProperties=/opt/liferay/cluster-config/cluster-config.xml
+	ehcache.multi.vm.config.location.peerProviderProperties=channelProperties=/opt/liferay/cluster-config/cluster-config.xml
+{{end}}
+
+ehcache.bootstrap.cache.loader.factory=com.liferay.portal.cache.ehcache.JGroupsBootstrapCacheLoaderFactory
+ehcache.cache.event.listener.factory=net.sf.ehcache.distribution.jgroups.JGroupsCacheReplicatorFactory
+ehcache.cache.manager.peer.provider.factory=com.liferay.portal.cache.ehcache.JGroupsCacheManagerPeerProviderFactory
+
+
+#
+# Replicate Lucene index write across all members of the cluster. 
+# This is only relevant when using the default Lucene indexing engine.
+#
+lucene.replicate.write=true
+

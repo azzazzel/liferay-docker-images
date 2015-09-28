@@ -1,0 +1,8 @@
+[template]
+src = "cluster-config.xml.tmpl"
+dest = "/opt/liferay/cluster-config/cluster-config.xml"
+keys = [ 
+	"/liferay/___cluster_name___/clusterlink/config"
+]
+owner = "root"
+mode = "0644"
